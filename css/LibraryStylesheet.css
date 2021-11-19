@@ -17,9 +17,8 @@ body{
     padding-top: 10px;
     width: 100%;
     justify-content: space-between;
+    /* font-family: 'Merienda One', cursive; */
     z-index: 1;
-    background-color: white;
-    opacity: 0.1;
 }
 
 #top button{
@@ -27,6 +26,7 @@ body{
 }
 
 #left{
+    /* font-family: 'Merienda One', cursive; */
     position: fixed;
     top: 0;
     left: 0;
@@ -48,6 +48,7 @@ body{
     font-size: 20px;
     font-weight: 700;
     height: 50px;
+    /* border-color: cadetblue; */
     border: 0.3px;
 }
 
@@ -58,10 +59,26 @@ body{
     width: 80%;
     float: left;
     text-align: center;
+    /* font-family: 'Merienda One', cursive; */
+}
+
+#update_song_container{
+    text-align: -webkit-center;
+}
+
+#add_song_container{
+    text-align: -webkit-center;
+}
+
+#filer input{
+    padding: 0;
+    width: 300px;
+    border: none;
 }
 
 #results_Container{
     padding-right: 15px;
+    padding-left: 5px;
 }
 
 h1{
@@ -72,14 +89,25 @@ h1{
 h2{
     text-align: center;
     padding: 25px;
+    color: #f8f9fa;
+    text-shadow: 0 0 15px black;
+}
+
+h4{
+    color: #f8f9fa;
+    text-shadow: 0 0 15px black;
 }
 
 input{
-   height: 38px;
-   width: 220px;
-   padding-bottom: 7px;
-   border-radius: 16px;
-   border: 0;
+    border: 2px solid gray;
+    height: 38px;
+    width: 220px;
+    padding: 10px;
+    border-radius: 16px;
+}
+
+#search-button button{
+    vertical-align: initial;
 }
 
 input::-webkit-input-placeholder{
@@ -120,8 +148,10 @@ input::-webkit-input-placeholder{
         padding-top: 5px;
     }
 
-    .dropdown{
-        right: 35%;
+    #dropdownMenuLink{
+        width: 73px;
+        overflow: hidden;
+        border-radius: 20px;
     }
 
     #search-button button{
