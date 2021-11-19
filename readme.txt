@@ -5,11 +5,11 @@ A simple web application which allows users to stream, create playlist, like sou
 ##Team Members
 - Suriya Prasad P
 - Navaneeth A B
-- Sudharsan
+- Sudharsan V
 - Srinath S
-- Rajesh
+- Rajesh G
 - V S Tharun
-- Vishwakjith
+- Vishwakjith I
 
 
 ##Outline
