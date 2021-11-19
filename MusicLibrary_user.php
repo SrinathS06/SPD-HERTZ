@@ -3,7 +3,7 @@
     session_start();
 
     if(! isset ($_SESSION['userID'])) {
-         header("Location:LoginPage.php");    
+         header("Location:index.php");    
         }    
 ?>
 
@@ -190,13 +190,11 @@
             <form method="POST">
             <div id="search-button">
             <input type="text" id="searchquery" name="searchquery" class="search" placeholder=" Search Songs, Artists..." />
-            <button class="btn btn-outline-success" type="submit" name="search_button" value="search" ><i class="fas fa-search" style="color: grey;"></i> </button>
+            <button class="btn btn-dark" type="submit" name="search_button" value="search" ><i class="fas fa-search" style="color: grey;"></i> </button>
             </div>
             </form>
-            <div class="dropdown">
-            <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-            Profile summary: 
-            </a>
+            <div class="btn-group dropstart">
+            <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">Profile summary</a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
             <a class="dropdown-item"><?php GetUserSummary();?></a>
             <hr class="dropdown-divider">
@@ -237,16 +235,13 @@
         return $conn;
     }
 
-    function SearchSongs()
-    {  
-        //echo "hi";
+    function SearchSongs(){  
         $conn = ConnectDB();    
         $val = mysqli_real_escape_string ($conn, $_POST['searchquery']);
         $query = "SELECT * FROM song WHERE Title LIKE '%".$val."%' or Album LIKE '%".$val."%' or Artist LIKE '%".$val."%' or Composer LIKE '%".$val."%' or Genre LIKE '%".$val."%'";
         if ($result = mysqli_query($conn, $query)) 
         {
-            //printf ("Select returned %d rows.\n", mysqli_num_rows($result));
-            $returnVal = table_songs($result);
+            $returnVal = table_search($result);
             mysqli_close($conn);
             return $returnVal;
         }
@@ -258,14 +253,18 @@
     
     //function to display all songs from library
     function GetAllSongs(){
-           //echo "isset";
+        $userID = $_SESSION['userID'];
         $conn = ConnectDB();      
-        $query = "SELECT * FROM song order by SongID DESC LIMIT 20";
+        $query = "SELECT * FROM song order by SongID DESC LIMIT 8";
+        $query1 = "SELECT * FROM `song` WHERE Genre IN (SELECT Genre from `song` WHERE SongID IN (SELECT SongID FROM `history` WHERE userID = {$userID}) GROUP BY Genre) LIMIT 6;";
+        $query2 = "SELECT * FROM `song` WHERE Artist IN (SELECT Artist from `song` WHERE SongID IN (SELECT SongID FROM `history` WHERE userID = {$userID}) GROUP BY Artist) LIMIT 6;";
         if ($result = mysqli_query($conn, $query)) 
         {
-            //printf("Select returned %d rows.\n", mysqli_num_rows($result));
             $returnVal = table_songs($result);
-            //echo ($returnVal);
+            $result1 = mysqli_query($conn, $query1);
+            $result2 = mysqli_query($conn, $query2);
+            $returnVal .= table_rec_genre($result1);
+            $returnVal .= table_rec_artist($result2);
             mysqli_close($conn);
             return $returnVal;
         }
@@ -279,13 +278,10 @@
      function GetPlayList(){
         $userID = $_SESSION['userID'];
         $conn = ConnectDB();
-        //echo "Get Playlist {$userID}";   
         $query = "SELECT * FROM playlist_info where userID = {$userID}";
-        //echo $query;
         
         if ($result = mysqli_query($conn, $query)) 
         {
-            //printf("Select returned %d rows.\n", mysqli_num_rows($result));
             $returnVal = table_pl($result);
             mysqli_close($conn);
             return $returnVal;
@@ -298,13 +294,11 @@
     }
     //function to display all songs liked by the user
     function GetLikes(){
-        //session_start();
         $userID = $_SESSION['userID'];
         $conn = ConnectDB();      
         $query = "SELECT * FROM song WHERE SongID IN ( SELECT SongID FROM likes WHERE userID={$userID});";
         if ($result = mysqli_query($conn, $query)) 
         {
-            //printf("Select returned %d rows.\n", mysqli_num_rows($result));
             $returnVal = liked_songs($result);
             mysqli_close($conn);
             return $returnVal;
@@ -322,7 +316,6 @@
         $query = "SELECT * from song join history on song.SongID = history.SongID where userID={$userID} ORDER BY played_time DESC LIMIT 20;";
         if ($result = mysqli_query($conn, $query)) 
         {
-            //printf("Select returned %d rows.\n", mysqli_num_rows($result));
             $returnVal = table_history($result);
             mysqli_close($conn);
             return $returnVal;
@@ -342,7 +335,7 @@
         
          $row_count = 1;
          
-        echo "<table class='table table-dark table-striped' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
         echo "<tr>";
         echo "<th><b>S.No</b></th>";
         echo "<th><b>Title</b></th>";
@@ -362,7 +355,113 @@
             echo  "<td>" . $row['Genre'] . "</td>";
             echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] ." )' style='background-color:transparent; border-color:transparent;'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
             echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' style='background-color:transparent; border-color:transparent;'><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
-            echo "<td><a type='button' title ='Like Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
+            echo "<td><a type='button' title ='Like/Unlike Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
+            echo "</tr>";      
+            $row_count++;
+        }
+       echo "</table>";
+    }
+
+    function table_rec_genre($result){
+        if(mysqli_num_rows($result)==0){
+            return "";
+        }
+        echo "<h2 style='padding-bottom:0px;'>Recommendations</h2>";
+        echo "<h4 style='padding: 10px;'>Based on Genre you listen</h4>";
+        
+         $row_count = 1;
+         
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<tr>";
+        echo "<th><b>S.No</b></th>";
+        echo "<th><b>Title</b></th>";
+        echo "<th><b>Album</b></th>";
+        echo "<th><b>Artist</b></th>";
+        echo "<th><b>Composer</b></th>";
+        echo "<th><b>Genre</b></th>";
+        echo "<th><b>Action</b></th>";
+        echo "</tr>";
+        while ($row=mysqli_fetch_array($result)) {
+            echo "<tr>";
+            echo  "<td>" . (string)$row_count . "</td>";
+            echo  "<td>" . $row['Title'] . "</td>";
+            echo  "<td>" . $row['Album'] . "</td>";
+            echo  "<td>" . $row['Artist'] . "</td>";
+            echo  "<td>" . $row['Composer'] . "</td>";
+            echo  "<td>" . $row['Genre'] . "</td>";
+            echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] ." )' style='background-color:transparent; border-color:transparent;'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' style='background-color:transparent; border-color:transparent;'><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Like/Unlike Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
+            echo "</tr>";      
+            $row_count++;
+        }
+       echo "</table>";
+    }
+
+    function table_rec_artist($result){
+        
+        if(mysqli_num_rows($result)==0){
+            return "";
+        }
+        echo "<h4 style='padding: 10px;'>Based on Artist you listen</h4>";
+        $row_count = 1;
+         
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<tr>";
+        echo "<th><b>S.No</b></th>";
+        echo "<th><b>Title</b></th>";
+        echo "<th><b>Album</b></th>";
+        echo "<th><b>Artist</b></th>";
+        echo "<th><b>Composer</b></th>";
+        echo "<th><b>Genre</b></th>";
+        echo "<th><b>Action</b></th>";
+        echo "</tr>";
+        while ($row=mysqli_fetch_array($result)) {
+            echo "<tr>";
+            echo  "<td>" . (string)$row_count . "</td>";
+            echo  "<td>" . $row['Title'] . "</td>";
+            echo  "<td>" . $row['Album'] . "</td>";
+            echo  "<td>" . $row['Artist'] . "</td>";
+            echo  "<td>" . $row['Composer'] . "</td>";
+            echo  "<td>" . $row['Genre'] . "</td>";
+            echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] ." )' style='background-color:transparent; border-color:transparent;'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' style='background-color:transparent; border-color:transparent;'><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Like/Unlike Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
+            echo "</tr>";      
+            $row_count++;
+        }
+       echo "</table>";
+    }
+
+    function table_search($result){
+        echo "<h2>SEARCH RESULTS</h2>";
+        if(mysqli_num_rows($result)==0){
+            return "<img src='https://caterhub-cdn.s3-us-west-1.amazonaws.com/assets/no_listings.png' alt='no listing avilable' width='200px' height='200px'><h4>OOPS!!! NO SONGS HERE!!!</h4>";
+        }
+        
+         $row_count = 1;
+         
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<tr>";
+        echo "<th><b>S.No</b></th>";
+        echo "<th><b>Title</b></th>";
+        echo "<th><b>Album</b></th>";
+        echo "<th><b>Artist</b></th>";
+        echo "<th><b>Composer</b></th>";
+        echo "<th><b>Genre</b></th>";
+        echo "<th><b>Action</b></th>";
+        echo "</tr>";
+        while ($row=mysqli_fetch_array($result)) {
+            echo "<tr>";
+            echo  "<td>" . (string)$row_count . "</td>";
+            echo  "<td>" . $row['Title'] . "</td>";
+            echo  "<td>" . $row['Album'] . "</td>";
+            echo  "<td>" . $row['Artist'] . "</td>";
+            echo  "<td>" . $row['Composer'] . "</td>";
+            echo  "<td>" . $row['Genre'] . "</td>";
+            echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] ." )' style='background-color:transparent; border-color:transparent;'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' style='background-color:transparent; border-color:transparent;'><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
+            echo "<td><a type='button' title ='Like/Unlike Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
             echo "</tr>";      
             $row_count++;
         }
@@ -377,7 +476,7 @@
         
          $row_count = 1;
          
-        echo "<table class='table table-dark table-striped' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
         echo "<tr>";
         echo "<th><b>S.No</b></th>";
         echo "<th><b>Title</b></th>";
@@ -397,7 +496,7 @@
             echo  "<td>" . $row['Genre'] . "</td>";
             echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] ." )' style='background-color:transparent; border-color:transparent;'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
             echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' style='background-color:transparent; border-color:transparent;'><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
-            echo "<td><a type='button' title ='Like Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
+            echo "<td><a type='button' title ='Unlike Song' onclick='LikeSong(".$row['SongID'] . " )' style='background-color:transparent; border-color:transparent;'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";            
             echo "</tr>";      
             $row_count++;
         }
@@ -408,10 +507,10 @@
      function table_pl($result){
         echo "<h2>PLAYLISTS</h2>";
         if(mysqli_num_rows($result)==0){
-            return "<img src='https://caterhub-cdn.s3-us-west-1.amazonaws.com/assets/no_listings.png' alt='no listing avilable' width='200px' height='200px'><h4>OOPS!!! NO SONGS HERE!!!</h4>";
+            return "<img src='https://caterhub-cdn.s3-us-west-1.amazonaws.com/assets/no_listings.png' alt='no listing avilable' width='200px' height='200px'><h4>OOPS!!! NO AVAILABLE PLAYLISTS!!!</h4>";
         }
         $row_count = 1;
-        echo "<table class='table table-dark table-striped' table border = '1' id='pl_results_table' name='pl_results_table' style='opacity: 0.65;'>";
+        echo "<table class='table table-dark table-hover' table border = '1' id='pl_results_table' name='pl_results_table' style='opacity: 0.65;'>";
         echo "<tr>";
         echo "<th><b>S.No</b></td>";
         echo "<th><b>PlaylistName</b></th>";
@@ -436,7 +535,7 @@
             return "<img src='https://caterhub-cdn.s3-us-west-1.amazonaws.com/assets/no_listings.png' alt='no listing avilable' width='200px' height='200px'><h4>OOPS!!! NO SONGS HERE!!!</h4>";
         }
         $row_count = 1;
-        echo "<table class='table table-dark table-striped' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
+        echo "<table class='table table-dark table-hover' table border = '1' id='results_table' name='results_table' style='opacity: 0.65;'>";
         echo "<tr>";
         echo "<th><b>Song Title</b></th>";
         echo "<th><b>Album</b></th>";
@@ -448,9 +547,9 @@
         echo "<td>" . $row['Title'] . "</td>";
         echo "<td>" . $row['Album'] . "</td>";
         echo "<td>" . $row['played_time'] . "</td>";
-        echo "<td><table><tr><td><audio class='audio' src='".$row['Filepath']."'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] . " )'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
+        echo "<td><table><tr><td><audio class='audio' src='Music/".$row['Title'].".mp3'></audio><a class='play-pause' title='play/pause' type='button' onclick='PlaySong(".$row['SongID'] . " )'><i class='fa fa-play'>&nbsp;</i></a>&nbsp;</td>";
         echo "<td><a type='button' title ='Add to Playlist' onclick='AddSongtoPl(".$row['SongID'] . "," . $row_count ." )' ><i class='fas fa-plus-square'>&nbsp;</i></a>&nbsp;</td>";
-        echo "<td><a type='button' title ='Like Song' onclick='LikeSong(".$row['SongID'] . " )'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";       
+        echo "<td><a type='button' title ='Like/Unlike Song' onclick='LikeSong(".$row['SongID'] . " )'><i class='far fa-heart'>&nbsp;</i></a>&nbsp;</td></tr></table></td>";       
         echo "</tr>"; 
         $row_count++;     
         }
