@@ -35,7 +35,7 @@ A simple web application which allows users to stream, create playlist, like sou
 - DBCode
 	- dbproject.sql - contains queries to create the necessary tables.
 
-- FrontEndCode
+- Code
 	- bootstrap-5.0.2-dist
 	- css - Contains all the necessary CSS files
 	- fonts - Contains all the fonts used in the website
