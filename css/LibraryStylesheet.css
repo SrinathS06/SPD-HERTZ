@@ -17,7 +17,6 @@ body{
     padding-top: 10px;
     width: 100%;
     justify-content: space-between;
-    /* font-family: 'Merienda One', cursive; */
     z-index: 1;
 }
 
@@ -26,7 +25,6 @@ body{
 }
 
 #left{
-    /* font-family: 'Merienda One', cursive; */
     position: fixed;
     top: 0;
     left: 0;
@@ -48,7 +46,6 @@ body{
     font-size: 20px;
     font-weight: 700;
     height: 50px;
-    /* border-color: cadetblue; */
     border: 0.3px;
 }
 
@@ -59,7 +56,6 @@ body{
     width: 80%;
     float: left;
     text-align: center;
-    /* font-family: 'Merienda One', cursive; */
 }
 
 #update_song_container{
